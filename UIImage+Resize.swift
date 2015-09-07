@@ -99,14 +99,23 @@ public extension UIImage {
         let imageRef: CGImageRef = self.CGImage
 
         // Build a context that's the same dimensions as the new size
-        let bitmap: CGContextRef = CGBitmapContextCreate(
+        let imageColorSpaceModel = CGColorSpaceGetModel(CGImageGetColorSpace(imageRef))
+        var colorspaceRef = CGImageGetColorSpace(imageRef)
+        let unsupportedColorSpace = (imageColorSpaceModel.value == 0 || imageColorSpaceModel.value == -1 || imageColorSpaceModel.value == kCGColorSpaceModelIndexed.value)
+        if unsupportedColorSpace {
+            println("Unsupported Color Space")
+            colorspaceRef = CGColorSpaceCreateDeviceRGB()
+        }
+
+        let bitmapInfo = CGBitmapInfo(CGBitmapInfo.ByteOrderDefault.rawValue | CGImageAlphaInfo.PremultipliedFirst.rawValue)
+        let bitmap : CGContextRef = CGBitmapContextCreate(
             nil,
             Int(newRect.size.width),
             Int(newRect.size.height),
-            CGImageGetBitsPerComponent(imageRef),
+            8, //CGImageGetBitsPerComponent(imageRef),
             0,
-            CGImageGetColorSpace(imageRef),
-            normalizeBitmapInfo(CGImageGetBitmapInfo(imageRef))
+            colorspaceRef,
+            bitmapInfo
         )
 
         // Rotate and/or flip the image if required by its orientation
