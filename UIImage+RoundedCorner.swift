@@ -19,15 +19,26 @@ public extension UIImage {
         let image = self.imageWithAlpha()
         
         // Build a context that's the same dimensions as the new size
-        let context: CGContextRef = CGBitmapContextCreate(
+        let imageRef: CGImageRef = self.CGImage!
+        let imageColorSpaceModel = CGColorSpaceGetModel(CGImageGetColorSpace(imageRef))
+        var colorspaceRef = CGImageGetColorSpace(imageRef)
+        
+        let unsupportedColorSpace = (imageColorSpaceModel.rawValue == 0 || imageColorSpaceModel.rawValue == -1)
+        if unsupportedColorSpace {
+            print("Unsupported Color Space")
+            colorspaceRef = CGColorSpaceCreateDeviceRGB()
+        }
+        
+        let bitmapInfo = CGBitmapInfo(rawValue:CGBitmapInfo.ByteOrderDefault.rawValue | CGImageAlphaInfo.PremultipliedFirst.rawValue)
+        let context : CGContextRef = CGBitmapContextCreate(
             nil,
             Int(image.size.width),
             Int(image.size.height),
-            CGImageGetBitsPerComponent(image.CGImage),
+            8,
             0,
-            CGImageGetColorSpace(image.CGImage),
-            CGImageGetBitmapInfo(image.CGImage)
-        )
+            colorspaceRef,
+            bitmapInfo.rawValue
+        )!
         
         // Create a clipping path with rounded corners
         CGContextBeginPath(context)
