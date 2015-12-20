@@ -28,12 +28,26 @@ public extension UIImage {
         let width  = CGImageGetWidth(imageRef)
         let height = CGImageGetHeight(imageRef)
 
-        // The bitsPerComponent and bitmapInfo values are hard-coded to prevent an "unsupported parameter combination" error
-        let offscreenContext: CGContextRef = CGBitmapContextCreate(
-            nil, width, height, 8, 0,
-            CGImageGetColorSpace(imageRef),
-            CGBitmapInfo.ByteOrderDefault | CGBitmapInfo(CGImageAlphaInfo.PremultipliedFirst.rawValue)
-        )
+        // Build a context that's the same dimensions as the new size
+        let imageColorSpaceModel = CGColorSpaceGetModel(CGImageGetColorSpace(imageRef))
+        var colorspaceRef = CGImageGetColorSpace(imageRef)
+        
+        let unsupportedColorSpace = (imageColorSpaceModel.rawValue == 0 || imageColorSpaceModel.rawValue == -1)
+        if unsupportedColorSpace {
+            print("Unsupported Color Space")
+            colorspaceRef = CGColorSpaceCreateDeviceRGB()
+        }
+        
+        let bitmapInfo = CGBitmapInfo(rawValue:CGBitmapInfo.ByteOrderDefault.rawValue | CGImageAlphaInfo.PremultipliedFirst.rawValue)
+        let offscreenContext : CGContextRef = CGBitmapContextCreate(
+            nil,
+            width,
+            height,
+            8,
+            0,
+            colorspaceRef,
+            bitmapInfo.rawValue
+        )!
         
         // Draw the image into the context and retrieve the new image, which will now have an alpha layer
         CGContextDrawImage(offscreenContext, CGRectMake(0, 0, CGFloat(width), CGFloat(height)), imageRef)
